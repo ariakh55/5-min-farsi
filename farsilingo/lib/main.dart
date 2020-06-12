@@ -6,14 +6,16 @@ void main(){
   runApp(MaterialApp(
     title: 'Farsilingo',
     debugShowCheckedModeBanner: false,
-    initialRoute: '/home',
-    routes: {
-      '/': (context) => Loading(),
-      '/home': (context) => Home()
-    },
+    // initialRoute: '/home',
+    // routes: {
+    //   '/': (context) => Loading(),
+    //   '/home': (context) => Home()
+    // },
+    home: Home(),
     theme: ThemeData(
-      primaryColor: Colors.white,
-      primarySwatch: Colors.white
+      primaryIconTheme: IconThemeData(
+        color: Colors.white
+      )
     ),
   ));
 }
