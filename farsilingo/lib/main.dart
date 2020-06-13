@@ -1,3 +1,4 @@
+import 'package:farsilingo/pages/firsttime/farsiCheck.dart';
 import 'package:flutter/material.dart';
 import 'package:farsilingo/pages/loading.dart';
 import 'package:farsilingo/pages/home.dart';

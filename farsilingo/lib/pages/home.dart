@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_speed_dial/flutter_speed_dial.dart';
+import 'package:farsilingo/services/database.dart';
+import 'package:farsilingo/services/user.dart';
 
 class Home extends StatefulWidget{
   @override
@@ -52,13 +54,18 @@ class _HomeState extends State<Home>{
             backgroundColor: _menuColor,
             child: Icon(Icons.settings),
             label: 'Settings',
-            onTap: () => print('Settings')
+            onTap: () async{
+              print(await DBKun.db.getVersion());
+            }
           ),
           SpeedDialChild(
             backgroundColor: _menuColor,
             child: Icon(Icons.account_circle),
             label: 'Account',
-            onTap: () => print('Account')
+            onTap: () async{
+              List<User> userList = await DBKun.db.getAllUsers();
+              print(userList.length);
+            }
           ),
         ],
       )
