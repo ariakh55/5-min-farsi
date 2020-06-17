@@ -1,4 +1,5 @@
 import 'package:percent_indicator/linear_percent_indicator.dart';
+import 'package:farsilingo/include/examResault.dart';
 import 'package:farsilingo/services/question.dart';
 import 'package:farsilingo/services/database.dart';
 import 'package:farsilingo/services/user.dart';
@@ -19,8 +20,31 @@ var _listStyle = TextStyle(
   fontWeight: FontWeight.w600
 );
 
-
 class _ExamState extends State<Exam>{
+
+  Route _createRoute(String user, int xp, int score, int progress) {
+    return PageRouteBuilder(
+      pageBuilder: (context, animation, secondaryAnimation) => Resualt(
+        score: score,
+        username: user,
+        xp: xp,
+        progress: progress,
+      ),
+      transitionsBuilder: (context, animation, secondaryAnimation, child) {
+        var begin = Offset(0.0, 1.0);
+        var end = Offset.zero;
+        var curve = Curves.ease;
+
+        var tween = Tween(begin: begin, end: end).chain(CurveTween(curve: curve));
+
+        return SlideTransition(
+          position: animation.drive(tween),
+          child: child,
+        );
+      },
+    );
+  }
+
   Map data = {};
   User userStats;
   var counter;
@@ -138,15 +162,7 @@ class _ExamState extends State<Exam>{
                             }
                             await DBKun.db.updateUser(userStats.username, xp, progress);
                           }
-                          List<User> user = await DBKun.db.getUser(userStats.username);
-                          Navigator.pushNamedAndRemoveUntil(ctx, '/home', 
-                            (route) => false, arguments: {
-                              'username': userStats.username,
-                              'name': user[0].name,
-                              'email': user[0].email,
-                              'progress': progress,
-                              'XP': xp,
-                            });
+                          Navigator.of(ctx).push(_createRoute(userStats.username,xp,lp,progress));
                         }else{
                           ++index;
                           counter++;
