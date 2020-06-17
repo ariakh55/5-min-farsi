@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:io';
 
+import 'package:farsilingo/services/question.dart';
 import 'package:flutter/services.dart';
 import 'package:path/path.dart';
 import 'package:sqflite/sqflite.dart';
@@ -41,24 +42,52 @@ class DBKun{
       print('Opening existing db');
     }
 
-    return await openDatabase(path, readOnly: true);
+    return await openDatabase(path, readOnly: false);
   }
 
+  //System Commands
+  getVersion() async{
+    final db = await database;
+    return (await db.rawQuery('Select sqlite_version()')).first.values.first;
+  }
+
+  //User section
   newUser(User newUser) async{
     final db = await database;
     var res = await db.insert("PersonalInfo", newUser.toMap());
     return res;
   }
 
-  getUser(String username, String password) async{
+  login(String username, String password) async{
     final db = await database;
-    var res = await db.query("PersonlaInfo", where: "UserName = ? and PassWord = ?", whereArgs: [username,password]);
-    return res.isNotEmpty ? User.fromMap(res.first) : Null; 
+    var res = await db.query("PersonalInfo", where: 'UserName = ?1 and PassWord = ?2', 
+      whereArgs: [username,password]);
+    return res.isNotEmpty ? res.map((x) => User.fromMap(x)).toList() : []; 
   }
 
-  getVersion() async{
+  getUser(String username) async{
     final db = await database;
-    return (await db.rawQuery('Select sqlite_version()')).first.values.first;
+    var res = await db.query("PersonalInfo", where: 'UserName = ?', 
+      whereArgs: [username]);
+    return res.isNotEmpty ? res.map((x) => User.fromMap(x)).toList() : [];
+  }
+
+  selectUser(String username) async{
+    final db = await database;
+    var res = await db.query("PersonalInfo", where: 'UserName = ?', 
+      whereArgs: [username], columns: ['UserName','Progress','XP']);
+    return res.isNotEmpty ? res.map((x) => User.fromMap(x)).toList() : []; 
+  }
+
+  updateUser(String username,int xp, int progress) async{
+    final db = await database;
+    await db.update('PersonalInfo', {'Progress': progress, 'XP': xp},
+      where: 'UserName = ?', whereArgs: [username]);
+  }
+
+  insertUser(User user) async{
+    final db = await database;
+    await db.insert('PersonalInfo', user.toMap());
   }
 
   getAllUsers() async{
@@ -67,4 +96,13 @@ class DBKun{
     List<User> list = res.isNotEmpty ? res.map((x) => User.fromMap(x)).toList() : [];
     return list;
   }
+
+  //Questions section
+  getQuestions(int id) async{
+    final db = await database;
+    var res = await db.query("Questions", where: "Lid = ?", whereArgs: [id]);
+    List<Question> list = res.isNotEmpty ? res.map((x) => Question.fromMap(x)).toList() : [];
+    return list;
+  }
+
 }

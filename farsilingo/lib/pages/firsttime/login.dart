@@ -1,4 +1,8 @@
+import 'package:farsilingo/services/database.dart';
+import 'package:farsilingo/services/user.dart';
 import 'package:flutter/material.dart';
+import 'dart:io';
+import 'package:path_provider/path_provider.dart';
 
 class Login extends StatefulWidget{
   Login(this.state, this.lang);
@@ -31,10 +35,28 @@ class _LoginState extends State<Login>{
 
   List<Widget> _pages;
 
+
   final _controller = PageController();
   static const _kDuration = const Duration(milliseconds: 300);
   static const _kCurve = Curves.ease;
   bool isLogin;
+
+  void _clearForm({String type = "log"}){
+    if(type == "sign"){
+      name.clear();
+      email.clear();
+    }
+    username.clear();
+    passwrd.clear();
+  } 
+
+  void _showSnackBar(BuildContext ctx, String msg, Color msgColor){
+    final _scaff = Scaffold.of(ctx);
+     _scaff.showSnackBar(SnackBar(
+      backgroundColor: msgColor,
+      content: Text(msg),
+    ));
+  }
 
   @override
   void initState(){
@@ -62,7 +84,7 @@ class _LoginState extends State<Login>{
                     controller: passwrd,
                     obscureText: true,
                     decoration: InputDecoration(
-                      labelText: 'Password | رمز عبور'
+                      labelText: 'Password | رمز عبور',
                     ),
                   ),
                 )
@@ -73,16 +95,39 @@ class _LoginState extends State<Login>{
             padding: const EdgeInsets.only(top: 285, left: 275.6),
             child: Row(
               children: <Widget>[
-                FlatButton(
-                  child: Text(
-                    'SignIn | ورود',
-                    style: _btnStyle,
-                  ),
-                  textColor: _bgColor,
-                  onPressed: (){
-                    print('logged in ${username.text} , $lang');
-                  },
-                ),
+                Builder(
+                  builder: (ctx) => 
+                    FlatButton(
+                      child: Text(
+                        'SignIn | ورود',
+                        style: _btnStyle,
+                      ),
+                      textColor: _bgColor,
+                      onPressed: () async{
+                        List<User> user = await DBKun.db.login(username.text.trim(), passwrd.text.trim());
+                        if(user.length>0){
+                          print('logged in!');
+                          _showSnackBar(ctx, 'Logged in!\tLoading....',_menuColor);
+                          final Directory dir = await getApplicationSupportDirectory();
+                          var file = File('${dir.path}/.acc.dat');
+                          String json = '${user[0].username},${user[0].password}';
+                          await file.writeAsString(json);
+                          Navigator.pushNamedAndRemoveUntil(context, '/home', (route) => false ,arguments: {
+                            'username': user[0].username,
+                            'name': user[0].name,
+                            'email': user[0].email,
+                            'lang' : user[0].type,
+                            'XP': user[0].xp,
+                            'progress': user[0].progress
+                          });
+                        }else{
+                          print('Username or Password is incorrect!');
+                          _showSnackBar(ctx, 'Username or Password is incorrect!',Colors.red);
+                        }
+                        _clearForm(type: "log");
+                      },
+                    )
+                )
               ],
             )
           )
@@ -144,8 +189,36 @@ class _LoginState extends State<Login>{
                     style: _btnStyle,
                   ),
                   textColor: _bgColor,
-                  onPressed: (){
-                    print('${name.text} aka ${username.text} signed up , $lang');
+                  onPressed: () async{
+                    try{
+                    User user = User(
+                      name: name.text.trim(),
+                      username: username.text.trim(),
+                      email: email.text.trim(),
+                      password: passwrd.text.trim(),
+                      progress: 0,
+                      xp: 0,
+                      type: lang
+                    );
+                    await DBKun.db.insertUser(user);
+                    final Directory dir = await getApplicationSupportDirectory();
+                    var file = File('${dir.path}/.acc.dat');
+                    String json = '${user.username},${user.password}';
+                    await file.writeAsString(json);
+                    Navigator.pushNamedAndRemoveUntil(context, '/home', (route) => false , arguments: {
+                            'username': user.username,
+                            'name': user.name,
+                            'email': user.email,
+                            'lang' : user.type,
+                            'XP': user.xp,
+                            'progress': user.progress
+                          });
+                    }catch (_) {
+                      print('Username exists!');
+                      return;
+                    }
+                    print('User added!');
+                    _clearForm(type: "sign");
                   }
                 ),
               ],
@@ -197,8 +270,10 @@ class _LoginState extends State<Login>{
                 onPressed: (){
                   if(isLogin) _controller.nextPage(duration: _kDuration, curve: _kCurve);
                   else _controller.previousPage(duration: _kDuration, curve: _kCurve);
-                  setState(() => print('state setted!!'));
                   isLogin = !isLogin;
+                  username.clear();
+                  passwrd.clear();
+                  setState(() => print('state setted!!'));
                 },
               )
             ],
